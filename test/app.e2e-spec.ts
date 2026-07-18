@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Server } from 'node:http';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
@@ -20,7 +21,9 @@ describe('App (e2e)', () => {
   });
 
   it('/health (GET)', async () => {
-    await request(app.getHttpServer()).get('/health').expect(200).expect({
+    const server = app.getHttpServer() as Server;
+
+    await request(server).get('/health').expect(200).expect({
       status: 'ok',
     });
   });
