@@ -4,7 +4,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the application...'
-                echo sh 'ls -la' 
+                sh 'ls -la' 
             }
         }
         stage('Test') {
