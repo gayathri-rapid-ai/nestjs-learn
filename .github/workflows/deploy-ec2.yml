@@ -1,0 +1,35 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy selected commit
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -eu
+            cd "${{ secrets.EC2_APP_PATH }}"
+            git fetch origin main
+            git checkout --detach "${{ github.sha }}"
+            cp .env.production .env
+            docker compose up --build --detach --remove-orphans
+            docker compose ps
