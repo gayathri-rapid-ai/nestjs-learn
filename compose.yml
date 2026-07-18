@@ -1,9 +1,6 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: nestjs-ec2-starter:latest
+    image: ${IMAGE_URI:?Set IMAGE_URI to the ECR image URI and tag}
     container_name: nestjs-ec2-starter
     restart: unless-stopped
     env_file:
