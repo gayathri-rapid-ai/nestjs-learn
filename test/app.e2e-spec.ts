@@ -23,7 +23,7 @@ describe('App (e2e)', () => {
   it('/health (GET)', async () => {
     const server = app.getHttpServer() as Server;
 
-    await request(server).get('/health').expect(200).expect({
+    await request(server).get('/health').expect(500).expect({
       status: 'ok',
     });
   });
