@@ -1,7 +1,16 @@
-FROM node:22-alpine AS build
+FROM node:22-alpine AS dependencies
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
+
+FROM dependencies AS test
+COPY . .
+RUN npm run lint \
+  && npm run test:cov \
+  && npm run test:e2e \
+  && npm run build
+
+FROM dependencies AS build
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
