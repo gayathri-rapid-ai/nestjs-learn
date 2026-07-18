@@ -4,6 +4,9 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the application...'
+                def files = sh(script: 'ls', returnStdout: true).trim()
+            
+                echo "The files in this workspace are: ${files}"
             }
         }
         stage('Test') {
