@@ -16,7 +16,7 @@ describe('AppController', () => {
 
   it('returns the service message', () => {
     expect(controller.getHello()).toEqual({
-      message: 'NestJS EC2 starter is running',
+      message: 'NestJS Multiservice starter is running',
     });
   });
 
