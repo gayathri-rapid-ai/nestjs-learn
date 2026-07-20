@@ -1,0 +1,118 @@
+VPC_ID = vpc-0bd695dbb1f1c9f66
+
+aws ec2 create-tags \
+--resources vpc-0bd695dbb1f1c9f66 \
+--tags Key=Name,Value=Kubes-VPC
+
+IGW_ID = igw-07b12a489775ee7b9
+
+aws ec2 attach-internet-gateway \
+--internet-gateway-id igw-07b12a489775ee7b9 \
+--vpc-id vpc-0bd695dbb1f1c9f66
+
+ROUTE_TABLE_ID = rtb-0bcf799394f42398b
+
+aws ec2 create-tags \
+  --resources rtb-0bcf799394f42398b \
+  --tags Key=Name,Value=Public-Route-Table
+
+aws ec2 create-route \
+  --route-table-id rtb-0bcf799394f42398b \
+  --destination-cidr-block 0.0.0.0/0 \
+  --gateway-id igw-07b12a489775ee7b9
+
+aws ec2 associate-route-table \
+  --route-table-id rtb-0bcf799394f42398b \
+  --subnet-id subnet-00d7675a067a42ea6
+
+aws ec2 associate-route-table \
+  --route-table-id rtb-0bcf799394f42398b \
+  --subnet-id subnet-0e9ae06f2cb6cd4d7
+
+aws ec2 describe-route-tables \
+  --route-table-ids rtb-0bcf799394f42398b
+
+aws ec2 modify-subnet-attribute \
+  --subnet-id subnet-00d7675a067a42ea6 \
+  --map-public-ip-on-launch
+
+aws ec2 create-tags \
+  --resources subnet-00d7675a067a42ea6 \
+  --tags \
+Key=kubernetes.io/role/elb,Value=1 \
+Key=kubernetes.io/cluster/Kubes-EKS,Value=shared
+
+aws ec2 create-tags \
+  --resources subnet-0e9ae06f2cb6cd4d7 \
+  --tags \
+Key=kubernetes.io/role/elb,Value=1 \
+Key=kubernetes.io/cluster/Kubes-EKS,Value=shared
+
+
+aws iam create-role \
+  --role-name EKS-Cluster-Role \
+  --assume-role-policy-document file://eks-cluster-trust-policy.json
+
+aws iam attach-role-policy \
+    --role-name EKS-Cluster-Role \
+    --policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+aws iam create-role \
+  --role-name EKS-Node-Role \
+  --assume-role-policy-document file://eks-node-trust-policy.json
+
+aws iam attach-role-policy \
+  --role-name EKS-Node-Role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly
+
+aws iam attach-role-policy \
+  --role-name EKS-Node-Role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+
+aws iam attach-role-policy \
+  --role-name EKS-Node-Role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+
+aws eks create-cluster \
+  --name Kubes-EKS \
+  --role-arn arn:aws:iam::634005656826:role/EKS-Cluster-Role \
+  --resources-vpc-config subnetIds=subnet-00d7675a067a42ea6,subnet-0e9ae06f2cb6cd4d7
+
+
+aws eks create-nodegroup \
+  --cluster-name Kubes-EKS \
+  --nodegroup-name general-workers \
+  --subnets subnet-00d7675a067a42ea6 subnet-0e9ae06f2cb6cd4d7 \
+  --node-role arn:aws:iam::634005656826:role/EKS-Node-Role \
+  --instance-types t3.medium \
+  --scaling-config minSize=2,maxSize=3,desiredSize=2
+
+aws eks update-kubeconfig \
+  --region us-east-1 \
+  --name Kubes-EKS
+
+kubectl get nodes
+
+aws eks describe-nodegroup \
+  --cluster-name Kubes-EKS \
+  --nodegroup-name general-workers \
+  --query "nodegroup.status"
+
+aws eks delete-nodegroup \
+  --cluster-name Kubes-EKS \
+  --nodegroup-name general-workers
+
+aws eks create-nodegroup \
+  --cluster-name Kubes-EKS \
+  --nodegroup-name general-workers \
+  --node-role arn:aws:iam::634005656826:role/EKS-Node-Role \
+  --subnets subnet-00d7675a067a42ea6 subnet-0e9ae06f2cb6cd4d7 \
+  --instance-types t3.micro \
+  --scaling-config minSize=2,maxSize=2,desiredSize=2
+
+aws eks update-nodegroup-config \
+  --cluster-name Kubes-EKS \
+  --nodegroup-name general-workers \
+  --scaling-config minSize=0,desiredSize=0,maxSize=2
+
+kubectl get svc

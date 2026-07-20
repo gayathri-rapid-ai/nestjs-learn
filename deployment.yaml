@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: node-app
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: node-app
+
+  template:
+    metadata:
+      labels:
+        app: node-app
+
+    spec:
+      containers:
+      - name: node-app
+
+        image: 634005656826.dkr.ecr.us-east-1.amazonaws.com/myspace-myrepo:latest
+
+        ports:
+        - containerPort: 3000
